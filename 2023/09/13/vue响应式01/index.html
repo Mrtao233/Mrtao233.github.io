@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"mrtao233.github.io","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="响应式原理 1234567891011121314let price&#x3D;5,quantity&#x3D;2,total&#x3D;price*quantityconsole.log(price,quantity,total);let dep&#x3D;new Set()&#x2F;&#x2F;用这个因为其集合特性,不允许相同元素存在let effect&#x3D;()&#x3D;&gt;&amp;#123;total&#x3D;price*quantity&amp;#125;functi">
+<meta property="og:type" content="article">
+<meta property="og:title" content="vue基本原理动态响应的实现">
+<meta property="og:url" content="https://mrtao233.github.io/2023/09/13/vue%E5%93%8D%E5%BA%94%E5%BC%8F01/index.html">
+<meta property="og:site_name" content="Mrtao&#39;s blog">
+<meta property="og:description" content="响应式原理 1234567891011121314let price&#x3D;5,quantity&#x3D;2,total&#x3D;price*quantityconsole.log(price,quantity,total);let dep&#x3D;new Set()&#x2F;&#x2F;用这个因为其集合特性,不允许相同元素存在let effect&#x3D;()&#x3D;&gt;&amp;#123;total&#x3D;price*quantity&amp;#125;functi">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-09-13T08:42:55.000Z">
+<meta property="article:modified_time" content="2023-09-17T06:47:43.753Z">
+<meta property="article:author" content="Mrtao">
+<meta property="article:tag" content="框架学习">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://mrtao233.github.io/2023/09/13/vue%E5%93%8D%E5%BA%94%E5%BC%8F01/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>vue基本原理动态响应的实现 | Mrtao's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mrtao's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://mrtao233.github.io/2023/09/13/vue%E5%93%8D%E5%BA%94%E5%BC%8F01/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Mrtao">
+      <meta itemprop="description" content="第一个博客网站">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mrtao's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          vue基本原理动态响应的实现
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-09-13 16:42:55" itemprop="dateCreated datePublished" datetime="2023-09-13T16:42:55+08:00">2023-09-13</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-09-17 14:47:43" itemprop="dateModified" datetime="2023-09-17T14:47:43+08:00">2023-09-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/vue/" itemprop="url" rel="index"><span itemprop="name">vue</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <meta name="referrer" content="no-referrer"/>
+<p><a
+target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1SZ4y1x7a9/?share_source=copy_web">响应式原理</a></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> price=<span class="number">5</span>,quantity=<span class="number">2</span>,total=price*quantity</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(price,quantity,total);</span><br><span class="line"><span class="keyword">let</span> dep=<span class="keyword">new</span> <span class="title class_">Set</span>()<span class="comment">//用这个因为其集合特性,不允许相同元素存在</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> <span class="title function_">effect</span>=(<span class="params"></span>)=&gt;&#123;total=price*quantity&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">trigger</span> ()&#123;dep.<span class="title function_">forEach</span>(<span class="function"><span class="params">effect</span>=&gt;</span><span class="title function_">effect</span>())&#125;</span><br><span class="line"><span class="keyword">function</span> <span class="title function_">track</span>(<span class="params"></span>)&#123;dep.<span class="title function_">add</span>(effect)&#125;</span><br><span class="line"><span class="title function_">track</span>()<span class="comment">//save thiscode to a storage 将可能使数据动态变化的函数放到储存器中</span></span><br><span class="line"></span><br><span class="line">price=<span class="number">10</span></span><br><span class="line"><span class="title function_">trigger</span>()<span class="comment">//run all codes in  storage 运行所有动态变化相关的函数</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(price,quantity,total);</span><br></pre></td></tr></table></figure>
+<p>结果:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">5 2 10</span><br><span class="line">10 2 20</span><br></pre></td></tr></table></figure>
+<ol type="1">
+<li>上面实现了最基础的动态响应,下面的升级了,实现了一种
+"动态数据"和"动态变化相关的函数"的数据结构,毕竟每次一个数据变化都引起轩然大波,会使服务器很困扰啊!(服务器:劳资哪有那么多的运行空间给你啊,用户:你这样每次变化一个参数都要等半天,cnm)</li>
+</ol>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> depsMap=<span class="keyword">new</span> <span class="title class_">Map</span>()</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">track</span>(<span class="params">key</span>) &#123;</span><br><span class="line">	<span class="keyword">let</span> dep =depsMap.<span class="title function_">get</span>(key)</span><br><span class="line">	<span class="keyword">if</span>(!dep)&#123;</span><br><span class="line">		depsMap.<span class="title function_">set</span>(key,(dep=<span class="keyword">new</span> <span class="title class_">Set</span>()))</span><br><span class="line">	&#125;</span><br><span class="line">	dep.<span class="title function_">add</span>(effect)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">trigger</span>(<span class="params">key</span>) &#123;</span><br><span class="line">	<span class="keyword">let</span> dep=depsMap.<span class="title function_">get</span>(key)</span><br><span class="line">	<span class="keyword">if</span>(dep)&#123;</span><br><span class="line">		dep.<span class="title function_">forEach</span>(<span class="function"><span class="params">effect</span>=&gt;</span>&#123;</span><br><span class="line">			<span class="title function_">effect</span>()</span><br><span class="line">		&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">let</span> product=&#123;<span class="attr">price</span>:<span class="number">5</span>,<span class="attr">quantity</span>:<span class="number">2</span>&#125;</span><br><span class="line"><span class="keyword">let</span> total=<span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> <span class="title function_">effect</span>=(<span class="params"></span>)=&gt;&#123;</span><br><span class="line">	total=product.<span class="property">price</span>*product.<span class="property">quantity</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="title function_">track</span>(<span class="string">&#x27;quantity&#x27;</span>)</span><br><span class="line"><span class="title function_">effect</span>()</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(total);</span><br><span class="line">product.<span class="property">price</span>=<span class="number">1</span></span><br><span class="line"><span class="title function_">trigger</span>(<span class="string">&quot;quantity&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(total);</span><br><span class="line"><span class="comment">//map包裹 key:set(对应的函数1,对应的函数2,对应的函数3....)</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr class="header">
+<th>动态变化参数1</th>
+<th>对应的函数1,对应的函数2,对应的函数3....</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>动态变化参数2</td>
+<td>.....</td>
+</tr>
+<tr class="even">
+<td>.....</td>
+<td>.....</td>
+</tr>
+</tbody>
+</table>
+<ol start="2" type="1">
+<li>你也许认为已经很好了,但是我们选择将上面的几个map做为值,动态变化参数1,动态变化参数2...放在一个object里面,作为键,将其封装成一个weakmap,方便管理要运行的函数,注意track和trigger,下面要用</li>
+</ol>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> targetMap=<span class="keyword">new</span> <span class="title class_">WeakMap</span>()</span><br><span class="line"><span class="comment">// 特殊的map,key必须是对象</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">track</span>(<span class="params">target,key</span>) &#123;</span><br><span class="line">	<span class="keyword">let</span> depsMap=targetMap.<span class="title function_">get</span>(target)</span><br><span class="line">	<span class="keyword">if</span>(!depsMap)&#123;</span><br><span class="line">		targetMap.<span class="title function_">set</span>(target,(depsMap=<span class="keyword">new</span> <span class="title class_">Map</span>()))</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">let</span> dep=depsMap.<span class="title function_">get</span>(key)</span><br><span class="line">	<span class="keyword">if</span>(!dep)&#123;</span><br><span class="line">		depsMap.<span class="title function_">set</span>(key,(dep=<span class="keyword">new</span> <span class="title class_">Set</span>()))</span><br><span class="line">	&#125;</span><br><span class="line">	dep.<span class="title function_">add</span>(effect)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">function</span>  <span class="title function_">trigger</span>(<span class="params">target,key</span>) &#123;</span><br><span class="line">	<span class="keyword">const</span> depsMap=targetMap.<span class="title function_">get</span>(target)</span><br><span class="line">	<span class="keyword">if</span> (!depsMap) &#123;<span class="keyword">return</span>&#125;	</span><br><span class="line">	<span class="keyword">let</span> dep=depsMap.<span class="title function_">get</span>(key)</span><br><span class="line">	<span class="keyword">if</span>(dep)&#123;</span><br><span class="line">		dep.<span class="title function_">forEach</span>(<span class="function"><span class="params">effect</span>=&gt;</span>&#123;<span class="title function_">effect</span>()&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> product=&#123;<span class="attr">price</span>:<span class="number">5</span>,<span class="attr">quantity</span>:<span class="number">2</span>&#125;</span><br><span class="line"><span class="keyword">let</span> total=<span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> <span class="title function_">effect</span>=(<span class="params"></span>)=&gt;&#123;</span><br><span class="line">	total=product.<span class="property">price</span>*product.<span class="property">quantity</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="title function_">track</span>(product,<span class="string">&#x27;quantity&#x27;</span>)</span><br><span class="line"><span class="title function_">effect</span>()</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(total);</span><br><span class="line">product.<span class="property">price</span>=<span class="number">1</span></span><br><span class="line"><span class="title function_">trigger</span>(product,<span class="string">&quot;quantity&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(total);</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>结果:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">10 </span><br><span class="line">2</span><br></pre></td></tr></table></figure>
+<p><img
+src="https://gitee.com/Mrtao233/for-blog/raw/master/vue_reactive/image-00.png" /></p>
+<ol start="3" type="1">
+<li><p>但是这样依然是手动的,而非自动的,下一步要实现自动响应式,这一步很复杂,建议去看课程</p>
+<ol type="1">
+<li><p>明确get/set和track/trigger关系</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">let</span> product=&#123;<span class="attr">price</span>:<span class="number">5</span>,<span class="attr">quantity</span>:<span class="number">2</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> proxiedProduct=<span class="keyword">new</span> <span class="title class_">Proxy</span>(product,&#123;</span><br><span class="line">    <span class="title function_">get</span>(<span class="params">target,key,receiver</span>)&#123;</span><br><span class="line">        <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;Get was called with key:&quot;</span>+key)</span><br><span class="line">        <span class="keyword">return</span> <span class="title class_">Reflect</span>.<span class="title function_">get</span>(target,key,receiver)</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="title function_">set</span>(<span class="params">target,key,value,receiver</span>)&#123;</span><br><span class="line">        <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;Set was called with key:&quot;</span>+key+<span class="string">&quot;and value=&quot;</span>+value);</span><br><span class="line">        <span class="keyword">return</span> <span class="title class_">Reflect</span>.<span class="title function_">set</span>(target,key,value,receiver)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;)</span><br><span class="line">proxiedProduct.<span class="property">quantity</span>=<span class="number">5</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(proxiedProduct.<span class="property">quantity</span>);</span><br></pre></td></tr></table></figure>
+<p>注意:这receiver好像没用视频原文:Ensures the proper value of this is
+used when our object has inherited values or functions from another
+object(确保target中继承自其他对象的函数和参数能被正常使用),但是我实验了一下,两者没有区别</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> person = &#123;</span><br><span class="line">  <span class="attr">isHuman</span>: <span class="literal">true</span>,</span><br><span class="line">  <span class="attr">printIntroduction</span>: <span class="keyword">function</span> (<span class="params"></span>) &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">`My name is <span class="subst">$&#123;<span class="variable language_">this</span>.name&#125;</span>. Am I human? <span class="subst">$&#123;<span class="variable language_">this</span>.isHuman&#125;</span>`</span>);</span><br><span class="line">  &#125;,</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> me = <span class="title class_">Object</span>.<span class="title function_">create</span>(person);</span><br><span class="line">me.<span class="property">name</span> = <span class="string">&#x27;Matthew&#x27;</span></span><br><span class="line"><span class="keyword">let</span> proxiedme=<span class="keyword">new</span> <span class="title class_">Proxy</span>(me,&#123;</span><br><span class="line">    <span class="comment">// get(target,key)&#123;</span></span><br><span class="line">    <span class="comment">//     console.log(&quot;Get was called with key:&quot;+key)</span></span><br><span class="line">    <span class="comment">//     return target[key]</span></span><br><span class="line">    <span class="comment">// &#125;,</span></span><br><span class="line">      <span class="title function_">get</span>(<span class="params">target,key,receiver</span>)&#123;</span><br><span class="line">        <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;Get was called with key:&quot;</span>+key)</span><br><span class="line">        <span class="keyword">return</span> <span class="title class_">Reflect</span>.<span class="title function_">get</span>(target,key,receiver)</span><br><span class="line">    &#125;,</span><br><span class="line">      <span class="title function_">set</span>(<span class="params">target,key,value</span>)&#123;</span><br><span class="line">        <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;Set was called with key:&quot;</span>+key+<span class="string">&quot;and value=&quot;</span>+value);</span><br><span class="line">       target[key]=value</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//     set(target,key,value,receiver)&#123;</span></span><br><span class="line">    <span class="comment">//     console.log(&quot;Set was called with key:&quot;+key+&quot;and value=&quot;+value);</span></span><br><span class="line">    <span class="comment">//     return Reflect.set(target,key,value,receiver)</span></span><br><span class="line">    <span class="comment">// &#125;</span></span><br><span class="line">&#125;)</span><br><span class="line">proxiedme.<span class="property">name</span> = <span class="string">&#x27;Mrtao&#x27;</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(me);</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(proxiedme.<span class="property">isHuman</span>);</span><br><span class="line">proxiedme.<span class="title function_">printIntroduction</span>()</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<table>
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 86%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>track()/</th>
+<th>save this code to a storage
+将新添加的数据和它对应的set(effects)放到储存器中,当访问对象内部的值(Get),就要调用这个</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>trigger()</td>
+<td>run all codes in storage
+运行所有动态变化相关的函数,当改变对象内部的值(Set),就要调用</td>
+</tr>
+</tbody>
+</table></li>
+<li><p>让我们对代码稍加包装</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">reactive</span>(<span class="params">target</span>)&#123;</span><br><span class="line">    <span class="keyword">const</span> handler=&#123;</span><br><span class="line">    <span class="title function_">get</span>(<span class="params">target,key,receiver</span>)&#123;</span><br><span class="line">        <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;Get was called with key:&quot;</span>+key)</span><br><span class="line">        <span class="keyword">return</span> <span class="title class_">Reflect</span>.<span class="title function_">get</span>(target,key,receiver)</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="title function_">set</span>(<span class="params">target,key,value,receiver</span>)&#123;</span><br><span class="line">        <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;Set was called with key:&quot;</span>+key+<span class="string">&quot;and value=&quot;</span>+value);</span><br><span class="line">        <span class="keyword">return</span> <span class="title class_">Reflect</span>.<span class="title function_">set</span>(target,key,value,receiver)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Proxy</span>(target,handler)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> product=<span class="title function_">reactive</span>(&#123;<span class="attr">price</span>:<span class="number">5</span>,<span class="attr">quantity</span>:<span class="number">2</span>&#125;)</span><br><span class="line">product.<span class="property">quantity</span>=<span class="number">4</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(product.<span class="property">quantity</span>);</span><br></pre></td></tr></table></figure>
+<ol start="3" type="1">
+<li><p>再与上面的trick和trigger联用</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> targetMap=<span class="keyword">new</span> <span class="title class_">WeakMap</span>()</span><br><span class="line"><span class="comment">// 特殊的map,key必须是对象</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">track</span>(<span class="params">target,key</span>) &#123;</span><br><span class="line">    <span class="keyword">let</span> depsMap=targetMap.<span class="title function_">get</span>(target)</span><br><span class="line">    <span class="keyword">if</span>(!depsMap)&#123;</span><br><span class="line">        targetMap.<span class="title function_">set</span>(target,(depsMap=<span class="keyword">new</span> <span class="title class_">Map</span>()))</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">let</span> dep=depsMap.<span class="title function_">get</span>(key)</span><br><span class="line">    <span class="keyword">if</span>(!dep)&#123;</span><br><span class="line">        depsMap.<span class="title function_">set</span>(key,(dep=<span class="keyword">new</span> <span class="title class_">Set</span>()))</span><br><span class="line">    &#125;</span><br><span class="line">    dep.<span class="title function_">add</span>(effect)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">function</span>  <span class="title function_">trigger</span>(<span class="params">target,key</span>) &#123;</span><br><span class="line">    <span class="keyword">const</span> depsMap=targetMap.<span class="title function_">get</span>(target)</span><br><span class="line">    <span class="keyword">if</span> (!depsMap) &#123;<span class="keyword">return</span>&#125;  </span><br><span class="line">    <span class="keyword">let</span> dep=depsMap.<span class="title function_">get</span>(key)</span><br><span class="line">    <span class="keyword">if</span>(dep)&#123;</span><br><span class="line">        dep.<span class="title function_">forEach</span>(<span class="function"><span class="params">effect</span>=&gt;</span>&#123;<span class="title function_">effect</span>()&#125;)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">reactive</span>(<span class="params">target</span>)&#123;</span><br><span class="line">    <span class="keyword">const</span> handler=&#123;</span><br><span class="line">    <span class="title function_">get</span>(<span class="params">target,key,receiver</span>)&#123;</span><br><span class="line">        <span class="keyword">let</span> result=<span class="title class_">Reflect</span>.<span class="title function_">get</span>(target,key,receiver)</span><br><span class="line">        <span class="title function_">track</span>(target,key)</span><br><span class="line">        <span class="keyword">return</span> result</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="title function_">set</span>(<span class="params">target,key,value,receiver</span>)&#123;</span><br><span class="line">      <span class="keyword">let</span> oldValue=target[key]</span><br><span class="line">      <span class="keyword">let</span> result=<span class="title class_">Reflect</span>.<span class="title function_">set</span>(target,key,value,receiver)</span><br><span class="line">      <span class="keyword">if</span>(oldValue!=result)&#123;</span><br><span class="line">        <span class="title function_">trigger</span>(target,key)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Proxy</span>(target,handler)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> product=<span class="title function_">reactive</span>(&#123;<span class="attr">price</span>:<span class="number">5</span>,<span class="attr">quantity</span>:<span class="number">2</span>&#125;),total=<span class="number">0</span></span><br><span class="line">effect=<span class="function">()=&gt;</span>&#123;</span><br><span class="line">    total=product.<span class="property">price</span>*product.<span class="property">quantity</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="title function_">effect</span>()</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(product.<span class="property">price</span>,product.<span class="property">quantity</span>,total);</span><br><span class="line">product.<span class="property">price</span>=<span class="number">6</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(product.<span class="property">price</span>,product.<span class="property">quantity</span>,total);</span><br></pre></td></tr></table></figure></li>
+</ol></li>
+</ol>
+<p>wow!
+我们成功啦,但是我们只能用一个effect并且每次还是需要effect(),这和原生不一样</p>
+<ol type="1">
+<li>我们引入函数</li>
+</ol>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 这一部分用来应对多个effect出现时,将传入的函数运行,重置activeEffect</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> activeEffect=<span class="literal">null</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">effect</span>(<span class="params">eff</span>)&#123;</span><br><span class="line">    activeEffect=eff</span><br><span class="line">    <span class="title function_">activeEffect</span>()</span><br><span class="line">    activeEffect=<span class="literal">null</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ol start="2" type="1">
+<li><p>修改原来的tract</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">track</span>(<span class="params">target,key</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span>(activeEffect)&#123;<span class="comment">//当引入的effect不为空</span></span><br><span class="line">    <span class="keyword">let</span> depsMap=targetMap.<span class="title function_">get</span>(target)</span><br><span class="line">    <span class="keyword">if</span>(!depsMap)&#123;</span><br><span class="line">        targetMap.<span class="title function_">set</span>(target,(depsMap=<span class="keyword">new</span> <span class="title class_">Map</span>()))</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">let</span> dep=depsMap.<span class="title function_">get</span>(key)</span><br><span class="line">    <span class="keyword">if</span>(!dep)&#123;</span><br><span class="line">        depsMap.<span class="title function_">set</span>(key,(dep=<span class="keyword">new</span> <span class="title class_">Set</span>()))</span><br><span class="line">    &#125;</span><br><span class="line">    dep.<span class="title function_">add</span>(activeEffect)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li><p>将以前只是定义effect部分,改为调用effect函数</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">effect=<span class="function">()=&gt;</span>&#123;</span><br><span class="line">    total=product.<span class="property">price</span>*product.<span class="property">quantity</span></span><br><span class="line">&#125;   </span><br></pre></td></tr></table></figure>
+<p>改为</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">effect</span>(<span class="function">()=&gt;</span>&#123;</span><br><span class="line">    total=product.<span class="property">price</span>*product.<span class="property">quantity</span></span><br><span class="line">&#125;)</span><br><span class="line"><span class="title function_">effect</span>(<span class="function">()=&gt;</span>&#123;</span><br><span class="line">    totalWithTax=product.<span class="property">price</span>*product.<span class="property">quantity</span>*<span class="number">1.5</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<p>完整代码:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 创建依赖表</span></span><br><span class="line"><span class="keyword">const</span> targetMap=<span class="keyword">new</span> <span class="title class_">WeakMap</span>()</span><br><span class="line"></span><br><span class="line"><span class="comment">// 这一部分用来应对多个effect出现时,将传入的函数运行,重置activeEffect</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> activeEffect=<span class="literal">null</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">effect</span>(<span class="params">eff</span>)&#123;</span><br><span class="line">    activeEffect=eff</span><br><span class="line">    <span class="title function_">activeEffect</span>()</span><br><span class="line">    activeEffect=<span class="literal">null</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 特殊的map,key必须是对象</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">track</span>(<span class="params">target,key</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span>(activeEffect)&#123;</span><br><span class="line">    <span class="keyword">let</span> depsMap=targetMap.<span class="title function_">get</span>(target)</span><br><span class="line">    <span class="keyword">if</span>(!depsMap)&#123;</span><br><span class="line">        targetMap.<span class="title function_">set</span>(target,(depsMap=<span class="keyword">new</span> <span class="title class_">Map</span>()))</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">let</span> dep=depsMap.<span class="title function_">get</span>(key)</span><br><span class="line">    <span class="keyword">if</span>(!dep)&#123;</span><br><span class="line">        depsMap.<span class="title function_">set</span>(key,(dep=<span class="keyword">new</span> <span class="title class_">Set</span>()))</span><br><span class="line">    &#125;</span><br><span class="line">    dep.<span class="title function_">add</span>(activeEffect)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">function</span>  <span class="title function_">trigger</span>(<span class="params">target,key</span>) &#123;</span><br><span class="line">    <span class="keyword">const</span> depsMap=targetMap.<span class="title function_">get</span>(target)</span><br><span class="line">    <span class="keyword">if</span> (!depsMap) &#123;<span class="keyword">return</span>&#125;  </span><br><span class="line">    <span class="keyword">let</span> dep=depsMap.<span class="title function_">get</span>(key)</span><br><span class="line">    <span class="keyword">if</span>(dep)&#123;</span><br><span class="line">        dep.<span class="title function_">forEach</span>(<span class="function"><span class="params">effect</span>=&gt;</span>&#123;<span class="title function_">effect</span>()&#125;)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 拦截get和set</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">reactive</span>(<span class="params">target</span>)&#123;</span><br><span class="line">    <span class="keyword">const</span> handler=&#123;</span><br><span class="line">    <span class="title function_">get</span>(<span class="params">target,key,receiver</span>)&#123;</span><br><span class="line">        <span class="keyword">let</span> result=<span class="title class_">Reflect</span>.<span class="title function_">get</span>(target,key,receiver)</span><br><span class="line">        <span class="title function_">track</span>(target,key)</span><br><span class="line">        <span class="keyword">return</span> result</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="title function_">set</span>(<span class="params">target,key,value,receiver</span>)&#123;</span><br><span class="line">      <span class="keyword">let</span> oldValue=target[key]</span><br><span class="line">      <span class="keyword">let</span> result=<span class="title class_">Reflect</span>.<span class="title function_">set</span>(target,key,value,receiver)</span><br><span class="line">      <span class="keyword">if</span>(oldValue!=result)&#123;</span><br><span class="line">        <span class="title function_">trigger</span>(target,key)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Proxy</span>(target,handler)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> product=<span class="title function_">reactive</span>(&#123;<span class="attr">price</span>:<span class="number">5</span>,<span class="attr">quantity</span>:<span class="number">2</span>&#125;),total=<span class="number">0</span>,totalWithTax=<span class="number">0</span></span><br><span class="line"><span class="title function_">effect</span>(<span class="function">()=&gt;</span>&#123;</span><br><span class="line">    total=product.<span class="property">price</span>*product.<span class="property">quantity</span></span><br><span class="line">&#125;)</span><br><span class="line"><span class="title function_">effect</span>(<span class="function">()=&gt;</span>&#123;</span><br><span class="line">    totalWithTax=product.<span class="property">price</span>*product.<span class="property">quantity</span>*<span class="number">1.5</span></span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(product.<span class="property">price</span>,product.<span class="property">quantity</span>,total,totalWithTax);</span><br><span class="line">product.<span class="property">price</span>=<span class="number">6</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(product.<span class="property">price</span>,product.<span class="property">quantity</span>,total,totalWithTax);</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>4.你如果看了案例的,你会发现这个Tax真的高50%,还有一点,你想不想优化代码</p></li>
+</ol></li>
+</ol>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">effect</span>(<span class="function">()=&gt;</span>&#123;</span><br><span class="line">    total=product.<span class="property">price</span>*product.<span class="property">quantity</span></span><br><span class="line">&#125;)</span><br><span class="line"><span class="title function_">effect</span>(<span class="function">()=&gt;</span>&#123;</span><br><span class="line">    totalWithTax=product.<span class="property">price</span>*product.<span class="property">quantity</span>*<span class="number">1.5</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<p>​ 优化成:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">effect</span>(<span class="function">()=&gt;</span>&#123;</span><br><span class="line">    total=product.<span class="property">price</span>*product.<span class="property">quantity</span></span><br><span class="line">&#125;)</span><br><span class="line"><span class="title function_">effect</span>(<span class="function">()=&gt;</span>&#123;</span><br><span class="line">    totalWithTax=total*<span class="number">1.5</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<p>​ 发现结果错误</p>
+<ol type="1">
+<li>定义ref,看不懂</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">function ref(raw)&#123;</span><br><span class="line">    const r=&#123;</span><br><span class="line">        get value()&#123;</span><br><span class="line">            track(r,&#x27;value&#x27;)</span><br><span class="line">            return raw</span><br><span class="line">        &#125;,</span><br><span class="line">        set value(newVal)&#123;</span><br><span class="line">            raw=newVal</span><br><span class="line">            trigger(r,&#x27;value&#x27;)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return r</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ol start="2" type="1">
+<li><p>将total=0改为total=ref(0)</p></li>
+<li><p>完整代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 创建依赖表</span></span><br><span class="line"><span class="keyword">const</span> targetMap=<span class="keyword">new</span> <span class="title class_">WeakMap</span>()</span><br><span class="line"></span><br><span class="line"><span class="comment">// 这一部分用来应对多个effect出现时,将传入的函数运行,重置activeEffect</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> activeEffect=<span class="literal">null</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">effect</span>(<span class="params">eff</span>)&#123;</span><br><span class="line">    activeEffect=eff</span><br><span class="line">    <span class="title function_">activeEffect</span>()</span><br><span class="line">    activeEffect=<span class="literal">null</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 特殊的map,key必须是对象</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">track</span>(<span class="params">target,key</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span>(activeEffect)&#123;</span><br><span class="line">    <span class="keyword">let</span> depsMap=targetMap.<span class="title function_">get</span>(target)</span><br><span class="line">    <span class="keyword">if</span>(!depsMap)&#123;</span><br><span class="line">        targetMap.<span class="title function_">set</span>(target,(depsMap=<span class="keyword">new</span> <span class="title class_">Map</span>()))</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">let</span> dep=depsMap.<span class="title function_">get</span>(key)</span><br><span class="line">    <span class="keyword">if</span>(!dep)&#123;</span><br><span class="line">        depsMap.<span class="title function_">set</span>(key,(dep=<span class="keyword">new</span> <span class="title class_">Set</span>()))</span><br><span class="line">    &#125;</span><br><span class="line">    dep.<span class="title function_">add</span>(activeEffect)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">function</span>  <span class="title function_">trigger</span>(<span class="params">target,key</span>) &#123;</span><br><span class="line">    <span class="keyword">const</span> depsMap=targetMap.<span class="title function_">get</span>(target)</span><br><span class="line">    <span class="keyword">if</span> (!depsMap) &#123;<span class="keyword">return</span>&#125;  </span><br><span class="line">    <span class="keyword">let</span> dep=depsMap.<span class="title function_">get</span>(key)</span><br><span class="line">    <span class="keyword">if</span>(dep)&#123;</span><br><span class="line">        dep.<span class="title function_">forEach</span>(<span class="function"><span class="params">effect</span>=&gt;</span>&#123;<span class="title function_">effect</span>()&#125;)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 拦截get和set</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">reactive</span>(<span class="params">target</span>)&#123;</span><br><span class="line">    <span class="keyword">const</span> handler=&#123;</span><br><span class="line">    <span class="title function_">get</span>(<span class="params">target,key,receiver</span>)&#123;</span><br><span class="line">        <span class="keyword">let</span> result=<span class="title class_">Reflect</span>.<span class="title function_">get</span>(target,key,receiver)</span><br><span class="line">        <span class="title function_">track</span>(target,key)</span><br><span class="line">        <span class="keyword">return</span> result</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="title function_">set</span>(<span class="params">target,key,value,receiver</span>)&#123;</span><br><span class="line">      <span class="keyword">let</span> oldValue=target[key]</span><br><span class="line">      <span class="keyword">let</span> result=<span class="title class_">Reflect</span>.<span class="title function_">set</span>(target,key,value,receiver)</span><br><span class="line">      <span class="keyword">if</span>(oldValue!=result)&#123;</span><br><span class="line">        <span class="title function_">trigger</span>(target,key)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Proxy</span>(target,handler)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">ref</span>(<span class="params">raw</span>)&#123;</span><br><span class="line">    <span class="keyword">const</span> r=&#123;</span><br><span class="line">        <span class="keyword">get</span> <span class="title function_">value</span>()&#123;</span><br><span class="line">            <span class="title function_">track</span>(r,<span class="string">&#x27;value&#x27;</span>)</span><br><span class="line">            <span class="keyword">return</span> raw</span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="keyword">set</span> <span class="title function_">value</span>(<span class="params">newVal</span>)&#123;</span><br><span class="line">            raw=newVal</span><br><span class="line">            <span class="title function_">trigger</span>(r,<span class="string">&#x27;value&#x27;</span>)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> r</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> product=<span class="title function_">reactive</span>(&#123;<span class="attr">price</span>:<span class="number">5</span>,<span class="attr">quantity</span>:<span class="number">2</span>&#125;),total=<span class="title function_">ref</span>(<span class="number">0</span>),totalWithTax=<span class="number">0</span></span><br><span class="line"><span class="title function_">effect</span>(<span class="function">()=&gt;</span>&#123;</span><br><span class="line">    total.<span class="property">value</span>=product.<span class="property">price</span>*product.<span class="property">quantity</span></span><br><span class="line">&#125;)</span><br><span class="line"><span class="title function_">effect</span>(<span class="function">()=&gt;</span>&#123;</span><br><span class="line">    totalWithTax=product.<span class="property">price</span>*product.<span class="property">quantity</span>*<span class="number">1.5</span></span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(product.<span class="property">price</span>,product.<span class="property">quantity</span>, total.<span class="property">value</span>,totalWithTax);</span><br><span class="line">product.<span class="property">price</span>=<span class="number">6</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(product.<span class="property">price</span>,product.<span class="property">quantity</span>, total.<span class="property">value</span>,totalWithTax);</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%A1%86%E6%9E%B6%E5%AD%A6%E4%B9%A0/" rel="tag"># 框架学习</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/09/13/vue%E5%93%8D%E5%BA%94%E5%BC%8F00/" rel="prev" title="vue基本原理动态响应的实现相关的两个对象">
+      <i class="fa fa-chevron-left"></i> vue基本原理动态响应的实现相关的两个对象
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/09/13/vue00/" rel="next" title="VUE官方文档疑问-模板语法和响应式基础">
+      VUE官方文档疑问-模板语法和响应式基础 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+    <div>
+    <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=450 src="//music.163.com/outchain/player?type=0&id=7575292815&auto=0&height=430"></iframe>
+    </div>
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Mrtao</p>
+  <div class="site-description" itemprop="description">第一个博客网站</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">15</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        <!-- -->
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Mrtao</span>
+</div>
+
+
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'default',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+  
+
+</body>
+</html>
